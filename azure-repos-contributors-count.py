@@ -58,8 +58,8 @@ for next_project in projects_response_obj['value']:
 
         repo_id = next_repo['id']
         # Get all commits in this repo
-        commits_response_obj = AzureDevOps.azure_devops_get_commits(args.organization, project_id, repo_id)
-        for next_commit in commits_response_obj['value']:
+        all_commits = AzureDevOps.azure_devops_get_commits(args.organization, project_id, repo_id)
+        for next_commit in all_commits:
             print('    - commit commitId: %s' % next_commit['commitId'])
             print('    - commit author-name: %s' % next_commit['author']['name'])
             print('    - commit author-email: %s' % next_commit['author']['email'])
@@ -87,4 +87,3 @@ for a in unique_authors:
     print(a)
 
 quit()
-
