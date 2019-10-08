@@ -5,6 +5,7 @@ import base64
 username = ''
 token_str = ''
 _azure_auth_header = None
+lookback_days = 90
 
 
 def easy_base_64_encode(original_string):
@@ -46,7 +47,7 @@ def time_delta_since_event_seconds(dt_event, dt_reference):
 
 
 def is_within_90_days(dt_event, dt_now):
-    timedelta_90_days = datetime.timedelta(90)
+    timedelta_90_days = datetime.timedelta(lookback_days)
     timedelta_since_event = dt_now - dt_event
     is_within = timedelta_since_event <= timedelta_90_days
     return is_within
@@ -77,15 +78,27 @@ def azure_devops_list_repos(organization, project):
 # https://docs.microsoft.com/en-us/rest/api/azure/devops/git/commits/get%20commits?view=azure-devops-rest-5.0
 # GET https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/commits?api-version=5.0
 def azure_devops_get_commits(organization, project, repositoryId):
-    timedelta_90_days = datetime.timedelta(90)
+    timedelta_90_days = datetime.timedelta(lookback_days)
     dt_from_date = datetime.datetime.now() - timedelta_90_days
     str_from_date = dt_from_date.strftime("%Y-%m-%d %H:%M:%S")
-
-    full_api_url = 'https://dev.azure.com/%s/%s/_apis/git/repositories/%s/commits?searchCriteria.fromDate=%s&api-version=5.0' % \
-                   (organization, project, repositoryId, str_from_date)
-
     azure_auth_header = get_azure_auth_header()
-    resp = requests.get(full_api_url, headers=azure_auth_header)
-    # print(resp.links['next'])
-    resp_json_obj = resp.json()
-    return resp_json_obj
+    all_commit_pages = []
+
+    page_size = 100
+    page = 0
+
+    while page == 0 or 'next' in resp.links:
+        num_skip = page * page_size
+        full_api_url = 'https://dev.azure.com/%s/%s/_apis/git/repositories/%s/commits?searchCriteria.fromDate=%s&searchCriteria.$skip=%s&api-version=5.0' % \
+                    (organization, project, repositoryId, str_from_date, num_skip)
+
+        resp = requests.get(full_api_url, headers=azure_auth_header)
+
+        all_commit_pages.append(resp.json())
+        page += 1
+
+    all_commits = []
+    for next_page in all_commit_pages:
+        all_commits.extend(next_page['value'])
+
+    return all_commits
