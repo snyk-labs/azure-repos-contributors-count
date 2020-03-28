@@ -7,6 +7,8 @@ token_str = ''
 _azure_auth_header = None
 lookback_days = 90
 
+url_prefix = ''
+
 
 def easy_base_64_encode(original_string):
     original_bytes = bytes(original_string, 'ascii')
@@ -55,9 +57,9 @@ def is_within_90_days(dt_event, dt_now):
 
 # https://docs.microsoft.com/en-us/rest/api/azure/devops/core/projects/list?view=azure-devops-rest-5.0
 # GET https://dev.azure.com/{organization}/_apis/projects?api-version=5.0
-def azure_devops_list_projects(organization):
+def azure_devops_list_projects():
     azure_auth_header = get_azure_auth_header()
-    full_api_url = 'https://dev.azure.com/%s/_apis/projects?api-version=5.0' % organization
+    full_api_url = '%s/_apis/projects?api-version=5.0' % url_prefix
 
     resp = requests.get(full_api_url, headers=azure_auth_header)
     resp_json_obj = resp.json()
@@ -66,8 +68,8 @@ def azure_devops_list_projects(organization):
 
 # https://docs.microsoft.com/en-us/rest/api/azure/devops/git/repositories/list?view=azure-devops-rest-5.0
 # GET https://dev.azure.com/{organization}/{project}/_apis/git/repositories?api-version=5.0
-def azure_devops_list_repos(organization, project):
-    full_api_url = 'https://dev.azure.com/%s/%s/_apis/git/repositories?api-version=5.0' % (organization, project)
+def azure_devops_list_repos(project):
+    full_api_url = '%s/%s/_apis/git/repositories?api-version=5.0' % (url_prefix, project)
 
     azure_auth_header = get_azure_auth_header()
     resp = requests.get(full_api_url, headers=azure_auth_header)
@@ -77,7 +79,7 @@ def azure_devops_list_repos(organization, project):
 
 # https://docs.microsoft.com/en-us/rest/api/azure/devops/git/commits/get%20commits?view=azure-devops-rest-5.0
 # GET https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/commits?api-version=5.0
-def azure_devops_get_commits(organization, project, repositoryId):
+def azure_devops_get_commits(project, repositoryId):
     timedelta_90_days = datetime.timedelta(lookback_days)
     dt_from_date = datetime.datetime.now() - timedelta_90_days
     str_from_date = dt_from_date.strftime("%Y-%m-%d %H:%M:%S")
@@ -89,8 +91,9 @@ def azure_devops_get_commits(organization, project, repositoryId):
 
     while page == 0 or 'next' in resp.links:
         num_skip = page * page_size
-        full_api_url = 'https://dev.azure.com/%s/%s/_apis/git/repositories/%s/commits?searchCriteria.fromDate=%s&searchCriteria.$skip=%s&api-version=5.0' % \
-                    (organization, project, repositoryId, str_from_date, num_skip)
+        full_api_url = '%s/%s/_apis/git/repositories/%s/commits?searchCriteria.fromDate=%s&searchCriteria.$skip=%s&api-version=5.0' % (
+            url_prefix, project, repositoryId, str_from_date, num_skip
+        )
 
         resp = requests.get(full_api_url, headers=azure_auth_header)
 

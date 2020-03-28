@@ -6,17 +6,37 @@ import AzureDevOps
 
 def parse_command_line_args():
     parser = argparse.ArgumentParser(description="Count developers in Azure Repos active in the last 90 days")
-    parser.add_argument('--organization', type=str, help='Your Azure DevOps Organization')
     parser.add_argument('--username', type=str, help='Your Azure DevOps username')
     parser.add_argument('--pat', type=str, help='Your Azure DevOps Personal Access Token')
 
+    # Azure DevOps Services
+    parser.add_argument('--organization', type=str, help='Your Azure DevOps Organization')
+
+    # Azure DevOps Server
+    parser.add_argument('--on-prem', type=bool, default=False, help='True if Azure Devops Server is hosted on premises')
+    parser.add_argument('--instance', type=str, help='Your Azure DevOps Instance')
+    parser.add_argument('--collection', type=str, help='Your Azure DevOps Collection')
+
     args = parser.parse_args()
 
-    if args.organization is None:
-        print('You must specify --organization')
-        parser.print_usage()
-        parser.print_help()
-        quit()
+    if args.on_prem:
+        if args.instance is None:
+            print('You must specify --instance when querying Azure DevOps Server')
+            parser.print_usage()
+            parser.print_help()
+            quit()
+
+        if args.collection is None:
+            print('You must specify --collection when querying Azure DevOps Server')
+            parser.print_usage()
+            parser.print_help()
+            quit()
+    else:
+        if args.organization is None:
+            print('You must specify --organization')
+            parser.print_usage()
+            parser.print_help()
+            quit()
 
     if args.username is None:
         print('You must specify --username')
@@ -37,8 +57,13 @@ args = parse_command_line_args()
 AzureDevOps.username = args.username
 AzureDevOps.token_str = args.pat
 
-projects_response_obj = AzureDevOps.azure_devops_list_projects(args.organization)
-# print(test_list_projects_response_json_obj)
+# Generate the URL prefix
+if args.on_prem:
+    AzureDevOps.url_prefix = 'https://%s/%s' % (args.instance, args.collection)
+else:
+    AzureDevOps.url_prefix = 'https://dev.azure.com/%s' % args.organization
+
+projects_response_obj = AzureDevOps.azure_devops_list_projects()
 
 dt_utc_now = datetime.datetime.utcnow()
 
@@ -51,14 +76,14 @@ for next_project in projects_response_obj['value']:
     project_id = next_project['id']
 
     # Get all repos in this project
-    repos_response_obj = AzureDevOps.azure_devops_list_repos(args.organization, project_id)
+    repos_response_obj = AzureDevOps.azure_devops_list_repos(project_id)
     for next_repo in repos_response_obj['value']:
         print('  - repo id: %s' % next_repo['id'])
         print('  - repo name: %s' % next_repo['name'])
 
         repo_id = next_repo['id']
         # Get all commits in this repo
-        all_commits = AzureDevOps.azure_devops_get_commits(args.organization, project_id, repo_id)
+        all_commits = AzureDevOps.azure_devops_get_commits(project_id, repo_id)
         for next_commit in all_commits:
             print('    - commit commitId: %s' % next_commit['commitId'])
             print('    - commit author-name: %s' % next_commit['author']['name'])
