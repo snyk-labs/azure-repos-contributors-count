@@ -10,7 +10,7 @@ Install virtual environment with:
     ```
 - Count contributing developers for Azure Devops Server (setup on premises)
   - ```bash
-       pipenv run python3 azure-repos-contributors-count.py --instance=[Azure DevOps Instance] --collection=[Azure DevOps Collection] --username=[Azure DevOps Username] --pat=[Azure DevOps Personal Access Token]
+       pipenv run python3 azure-repos-contributors-count.py --on-prem=True --instance=[Azure DevOps Instance] --collection=[Azure DevOps Collection] --username=[Azure DevOps Username] --pat=[Azure DevOps Personal Access Token]
     ```
 
 (Or use alternate Python 3 environment as required)
