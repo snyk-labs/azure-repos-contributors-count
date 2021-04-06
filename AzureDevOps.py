@@ -7,6 +7,9 @@ token_str = ''
 _azure_auth_header = None
 lookback_days = 90
 
+# The top argument from the user (or default to 100)
+top = ''
+
 
 def easy_base_64_encode(original_string):
     original_bytes = bytes(original_string, 'ascii')
@@ -55,9 +58,10 @@ def is_within_90_days(dt_event, dt_now):
 
 # https://docs.microsoft.com/en-us/rest/api/azure/devops/core/projects/list?view=azure-devops-rest-5.0
 # GET https://dev.azure.com/{organization}/_apis/projects?api-version=5.0
-def azure_devops_list_projects(organization):
+# Added the top argument at the end of the URI
+def azure_devops_list_projects(organization, top):
     azure_auth_header = get_azure_auth_header()
-    full_api_url = 'https://dev.azure.com/%s/_apis/projects?api-version=5.0' % organization
+    full_api_url = 'https://dev.azure.com/%s/_apis/projects?api-version=5.0&$top=%s' % (organization, top)
 
     resp = requests.get(full_api_url, headers=azure_auth_header)
     resp_json_obj = resp.json()

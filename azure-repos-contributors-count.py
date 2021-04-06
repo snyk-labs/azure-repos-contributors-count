@@ -10,6 +10,9 @@ def parse_command_line_args():
     parser.add_argument('--username', type=str, help='Your Azure DevOps username')
     parser.add_argument('--pat', type=str, help='Your Azure DevOps Personal Access Token')
 
+    # Added argument of the n top projects to retieve, default is 100
+    parser.add_argument('--top', type=int, help='The top n projects to return')
+
     args = parser.parse_args()
 
     if args.organization is None:
@@ -30,6 +33,20 @@ def parse_command_line_args():
         parser.print_help()
         quit()
 
+    # Check if the top arg was set, if not set to 100 as default
+    if args.top is None:
+        args.top = 100
+        print('Number of projects to retrieve was set to 100')
+    
+    # Set the max of projects to retieve to 100k in order to not stress the server
+    elif args.top > 100000:
+        print('The number of projects to retrieve can not be greater than 100000')
+        parser.print_usage()
+        parser.print_help()
+        quit()    
+    else :
+        print('Number of projects to retrieve was set to ' ,args.top)
+
     return args
 
 
@@ -37,17 +54,20 @@ args = parse_command_line_args()
 AzureDevOps.username = args.username
 AzureDevOps.token_str = args.pat
 
-projects_response_obj = AzureDevOps.azure_devops_list_projects(args.organization)
+projects_response_obj = AzureDevOps.azure_devops_list_projects(args.organization, args.top)
 # print(test_list_projects_response_json_obj)
 
 dt_utc_now = datetime.datetime.utcnow()
 
 unique_authors = set()
 
+# Accumulated Variable to count the projects retrieved and print the value at the end
+totalProjects = 0
+
 # Across all repos in all projects
 for next_project in projects_response_obj['value']:
     print('project name: %s' % next_project['name'])
-
+    totalProjects += 1
     project_id = next_project['id']
 
     # Get all repos in this project
@@ -83,7 +103,11 @@ for next_project in projects_response_obj['value']:
     print()
 
 print('\n\nUnique authors contributing in the last 90 days:')
+
 for a in unique_authors:
     print(a)
+
+# Print the total of projects retrieved
+print('\n\nTotal Projects found: ', totalProjects)
 
 quit()
