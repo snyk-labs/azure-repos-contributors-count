@@ -8,7 +8,7 @@ def parse_command_line_args():
     parser = argparse.ArgumentParser(description="Count developers in Azure Repos active in the last 90 days")
     parser.add_argument('--organization', type=str, help='Your Azure DevOps Organization')
     parser.add_argument('--username', type=str, help='Your Azure DevOps username')
-    parser.add_argument('--pat', type=str, help='Your Azure DevOps Personal Access Token')
+    parser.add_argument('--pat', type=int, help='Your Azure DevOps Personal Access Token')
 
     # Added argument of the n top projects to retieve, default is 100
     parser.add_argument('--top', type=str, help='The top n projects to return')
@@ -39,7 +39,7 @@ def parse_command_line_args():
         print('Number of projects to retrieve was set to 100')
     
     # Set the max of projects to retieve to 100k in order to not stress the server
-    elif int(args.top) > 100000:
+    elif args.top > 100000:
         print('The number of projects to retrieve can not be greater than 100000')
         parser.print_usage()
         parser.print_help()
