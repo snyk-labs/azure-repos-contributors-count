@@ -1,3 +1,4 @@
+## **This tool is deprecated, please refer to this [Tool](https://github.com/snyk-tech-services/snyk-scm-contributors-count) instaed**
 Count contributing developers to an Azure DevOps organization in the last 90 days.
 
 ## Usage
